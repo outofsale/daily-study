@@ -31,3 +31,43 @@
 // Safely handles empty vectors without unsigned underflow
 auto right = std::ssize(nums) - 1; 
 auto mid = std::ssize(nums) / 2;
+## Day 2: Perfect Forwarding, Reference Collapsing, and Algorithmic Complexity
+**Date:** March 9, 2026
+
+### Core Concepts Discussed
+
+* **`std::forward` and Type Deduction:**
+  * When passing an lvalue to `T&&`, `T` is deduced as an lvalue reference (`Type&`).
+  * When passing an rvalue to `T&&`, `T` is deduced as the base non-reference type (`Type`).
+  * `std::forward` relies on these deductions and reference collapsing to cast the parameter back to its original value category perfectly.
+
+* **Reference Collapsing Rules:**
+  * In C++, you cannot manually write a reference to a reference, but the compiler generates them during template deduction. They collapse according to strict rules:
+    * `&` + `&` $\rightarrow$ `&`
+    * `&` + `&&` $\rightarrow$ `&`
+    * `&&` + `&` $\rightarrow$ `&`
+    * `&&` + `&&` $\rightarrow$ `&&`
+  * **Rule of Thumb:** If there is an lvalue reference (`&`) anywhere, the result is an lvalue reference.
+
+* **`auto&&` and Generic Lambdas (C++14):**
+  * `auto&&` behaves identically to `T&&` (a forwarding/universal reference) because it runs on the exact same template type deduction and reference collapsing engine.
+  * In generic lambdas, you use `std::forward<decltype(arg)>(arg)` to perfectly forward an `auto&&` parameter, ensuring zero accidental copies in asynchronous wrappers or task schedulers.
+
+* **STL Search Algorithms and Complexity:**
+  * `std::find_if()` is "blind" to container sorting. It always performs a linear search with $O(N)$ complexity.
+  
+  * **For sorted data:**
+    * Use `std::lower_bound()` to find a specific value in $O(\log N)$ time.
+    * Use `std::partition_point()` to find the first element matching a predicate in a sorted container in $O(\log N)$ time.
+
+### Code Snippets / Examples
+
+**1. Perfect Forwarding in Generic Lambdas**
+```cpp
+#include <utility>
+
+// A zero-overhead wrapper that forwards perfectly
+auto time_execution = [](auto&& arg) {
+    // decltype(arg) extracts the deduced type for std::forward
+    process(std::forward<decltype(arg)>(arg));
+};
